@@ -56,6 +56,25 @@ const logic = {
             })
     },
 
+    addBuddie(username){
+        if (typeof username !== 'string') throw TypeError(`${username} is not a string`)
+
+        if (!username.trim()) throw Error('username is empty or blank')
+
+        return fetch(`${this.url}/users/${this._userId}/buddie`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Authorization': `Bearer ${this._token}`
+            },
+            body: JSON.stringify({ username })
+        })
+            .then(res => res.json())
+            .then(res => {
+                if (res.error) throw Error(res.error)
+            })
+    },
+
     get loggedIn() {
         return !!this._userId
     },
@@ -78,7 +97,6 @@ const logic = {
 
         if (!status.trim()) throw Error('status is empty or blank')
 
-        debugger
 
         return fetch(`${this.url}/users/${this._userId}/postits`, {
             method: 'POST',
@@ -94,8 +112,6 @@ const logic = {
             })
     },
 
-    
-
     listPostits() {
         return fetch(`${this.url}/users/${this._userId}/postits`, {
             method: 'GET',
@@ -106,7 +122,6 @@ const logic = {
             .then(res => res.json())
             .then(res => {
                 if (res.error) throw Error(res.error)
-
                 return res.data
             })
     },
@@ -153,8 +168,49 @@ const logic = {
             .then(res => {
                 if (res.error) throw Error(res.error)
             })
+    },
+
+    listBuddies() {
+        return fetch(`${this.url}/users/${this._userId}/buddies`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${this._token}`
+            }
+        })
+            .then(res => res.json())
+            .then(res => {
+                if (res.error) throw Error(res.error)
+            
+                return res.data
+            })
+    },
+    
+    assignBuddie(id, assignedTo){
+
+        if (typeof id !== 'string') throw TypeError(`${id} is not a string`)
+        if (typeof assignedTo !== 'string') throw TypeError(`${assignedTo} is not a string`)
+        
+        if (!id.trim()) throw Error('id is empty or blank')
+        if (!assignedTo.trim()) throw Error('assignedTo is empty or blank')
+       
+        
+
+        return fetch(`${this.url}/users/${this._userId}/postits/${id}/assign`, {
+            method: 'PUT', 
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Authorization': `Bearer ${this._token}`
+            }, 
+            body: JSON.stringify({assignedTo})
+        })
+            .then(res => res.json())
+            .then(res => {
+                
+                if (res.error) throw Error(res.error)
+            })
     }
 }
+
 
 // export default logic
 module.exports = logic

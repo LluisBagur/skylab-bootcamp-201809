@@ -13,14 +13,15 @@ const logic = {
         if (!username.trim()) throw new ValueError('username is empty or blank')
         if (!password.trim()) throw new ValueError('password is empty or blank')
 
-        return User.findOne({ username })
-            .then(user => {
-                if (user) throw new AlreadyExistsError(`username ${username} already registered`)
+        return (async () => {
+            let user = await User.findOne({ username })
 
-                user = new User({ name, surname, username, password })
+            if (user) throw new AlreadyExistsError(`username ${username} already registered`)
 
-                return user.save()
-            })
+            user = new User({ name, surname, username, password })
+
+            await user.save()
+        })()
     },
 
     authenticateUser(username, password) {
@@ -107,6 +108,7 @@ const logic = {
                     return user.save()
                 }
             })
+            .then(() => undefined)
     },
 
     /**
@@ -150,13 +152,11 @@ const logic = {
             .then(user => {
                 if (!user) throw new NotFoundError(`user with id ${id} not found`)
 
-                debugger
-
                 return Postit.find({ user: user._id })
                     .lean()
                     .then(postits => postits.map(postit => {
                         postit.id = postit._id.toString()
-                        
+
                         delete postit._id
 
                         postit.user = postit.user.toString()
@@ -190,16 +190,14 @@ const logic = {
             .then(user => {
                 if (!user) throw new NotFoundError(`user with id ${id} not found`)
 
-                const { postits } = user
-
-                const index = postits.findIndex(postit => postit.id === postitId)
-
-                if (index < 0) throw new NotFoundError(`postit with id ${postitId} not found in user with id ${id}`)
-
-                postits.splice(index, 1)
-
-                return user.save()
+                return Postit.findOne({ user: user._id, _id: postitId })
             })
+            .then(postit => {
+                if (!postit) throw new NotFoundError(`postit with id ${postitId} not found`)
+
+                return postit.remove()
+            })
+            .then(() => undefined)
     },
 
     modifyPostit(id, postitId, text) {
@@ -219,16 +217,16 @@ const logic = {
             .then(user => {
                 if (!user) throw new NotFoundError(`user with id ${id} not found`)
 
-                const { postits } = user
-
-                const postit = postits.find(postit => postit.id === postitId)
-
-                if (!postit) throw new NotFoundError(`postit with id ${postitId} not found in user with id ${id}`)
+                return Postit.findOne({ user: user._id, _id: postitId })
+            })
+            .then(postit => {
+                if (!postit) throw new NotFoundError(`postit with id ${postitId} not found`)
 
                 postit.text = text
 
-                return user.save()
+                return postit.save()
             })
+            .then(() => undefined)
     }
 }
 
